@@ -530,11 +530,13 @@ const StudyHubApp = () => {
     };
     if (editingAssignmentId) { // Editing an existing assignment
       setAssignments((prev) => prev.map((a) => (a.id === editingAssignmentId ? { ...base, id: editingAssignmentId } : a)));
-      //upload to backend
-      
     } else { // Adding a new assignment
       setAssignments((prev) => [{ ...base, id: Date.now().toString() }, ...prev]);
     }
+    api.post("coursework", base).catch((error) => {
+      console.error("Failed to save assignment:", error.response?.data || error.message);
+      alert("Failed to save assignment. Please try again.");
+    });
     setIsAssignmentModalOpen(false);
     setEditingAssignmentId(null);
     setCurrentPage("assignments");

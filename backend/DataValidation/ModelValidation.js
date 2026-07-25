@@ -22,14 +22,19 @@ export const CourseWorkSchema = z.object({
     course_id: z.string().min(1),
     cw_name: z.string().min(1),
     cw_grade: z.number().nullable().optional(),
-    cw_weight: z.number().min(0)
+    cw_weight: z.number().min(0),
+    description: z.string().optional(),
+    due_date: z.coerce.date().optional(),
+    priority: z.enum(["high", "medium", "low"]).optional(),
+    status: z.enum(["not_started", "in_progress", "completed", "overdue"]).optional(),
+    cw_type: z.enum(["assignment", "project", "exam", "lab", "grade_item"]).optional(),
 });
 
 export const QuizSchema = z.object({
     course_id: z.string().min(1),
     quiz_name: z.string().min(1),
     date: z.coerce.date().optional(),
-    grade: z.number().nullable().optional()
+    grade: z.number().nullable().optional(),
 });
 
 export const QuestionSchema = z.object({

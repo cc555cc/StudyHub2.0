@@ -27,7 +27,7 @@ const courseworkSchema = new mongoose.Schema({
     description: {type:String, default: ""},
     due_date: {type: Date},
     priority: {type: String, enum: ["high", "medium", "low"], default: "medium"}, 
-    status: {type: String, enum: ["not started", "in progress", "completed"], default: "not started"},
+    status: {type: String, enum: ["not started", "in progress", "completed", "overdue"], default: "not started"},
     cw_type: {type:String, enum: ["assignment", "project", "exam", "lab", "grade_item"], default: "assignment"}
 });
 export const CourseWork = mongoose.model("CourseWork", courseworkSchema);
