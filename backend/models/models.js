@@ -23,7 +23,12 @@ const courseworkSchema = new mongoose.Schema({
     course_id: { type: mongoose.Schema.Types.ObjectId, ref: "Course", required: true },
     cw_name:{type:String, required:true},
     cw_grade: {type:Number, default: null},
-    cw_weight: {type:Number, required: true}
+    cw_weight: {type:Number, required: true},
+    description: {type:String, default: ""},
+    due_date: {type: Date},
+    priority: {type: String, enum: ["high", "medium", "low"], default: "medium"}, 
+    status: {type: String, enum: ["not started", "in progress", "completed"], default: "not started"},
+    cw_type: {type:String, enum: ["assignment", "project", "exam", "lab", "grade_item"], default: "assignment"}
 });
 export const CourseWork = mongoose.model("CourseWork", courseworkSchema);
 

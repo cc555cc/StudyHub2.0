@@ -22,7 +22,7 @@ export const CourseWorkSchema = z.object({
     course_id: z.string().min(1),
     cw_name: z.string().min(1),
     cw_grade: z.number().nullable().optional(),
-    cw_weight: z.number().min(1)
+    cw_weight: z.number().min(0)
 });
 
 export const QuizSchema = z.object({

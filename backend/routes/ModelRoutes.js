@@ -70,6 +70,7 @@ router.get("/course/:courseId", validateParams(Schemas.makeIdSchema("courseId"))
 //for course work//
 router.get("/coursework/course/:courseId", validateParams(Schemas.makeIdSchema("courseId")), controllers.getCourseWorkByCourse);
 router.get("/coursework/grade", validateQuery(Schemas.HolidayQuerySchema), controllers.getCourseWorkByGrade);
+router.get("/coursework/user/:userId", validateParams(Schemas.makeIdSchema("userId")), controllers.getCourseWorkByUser);
 
 //for quiz//
 router.get("/quiz/course/:courseId", validateParams(Schemas.makeIdSchema("courseId")), controllers.getQuizzesByCourse);

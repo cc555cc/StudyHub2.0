@@ -137,6 +137,20 @@ export const getCourseWorkByGrade = async (req,res) =>{
     }
 };
 
+export const getCourseWorkByUser = async (req, res) => {
+    try{
+        const {userId} = req.params;
+        //find all courses that belong to the user
+        const courses = await Models.Course.find({user_id: userId});
+        const courseIds = courses.map(course => course._id);
+        //find all coursework for each course id found//
+        const coursework = await Models.CourseWork.find({course_id: {$in: courseIds}});
+        res.json(coursework);
+    }catch(error){
+        err_500(res,error);
+    }
+}
+
 export const createQuiz = async (req, res) => {
     try {
         const quiz = await Models.Quiz.create(req.body);

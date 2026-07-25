@@ -528,9 +528,11 @@ const StudyHubApp = () => {
       title: assignmentForm.title.trim(),
       description: assignmentForm.description.trim(),
     };
-    if (editingAssignmentId) {
+    if (editingAssignmentId) { // Editing an existing assignment
       setAssignments((prev) => prev.map((a) => (a.id === editingAssignmentId ? { ...base, id: editingAssignmentId } : a)));
-    } else {
+      //upload to backend
+      
+    } else { // Adding a new assignment
       setAssignments((prev) => [{ ...base, id: Date.now().toString() }, ...prev]);
     }
     setIsAssignmentModalOpen(false);
