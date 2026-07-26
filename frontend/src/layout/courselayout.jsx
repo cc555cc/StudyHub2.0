@@ -5,7 +5,7 @@ import Box from "@mui/material/Box";
 import TabContext from "@mui/lab/TabContext";
 import TabList from "@mui/lab/TabList";
 import TabPanel from "@mui/lab/TabPanel";
-import AssignmentView from "./course-layout-views/course-assignment-layout.jsx";
+import CourseWorkView from "./course-layout-views/course-coursework-layout.jsx";
 import GradeView from "./course-layout-views/course-grade-layout.jsx";
 import QuizView from "./course-layout-views/course-quiz-layout.jsx";
 import ResourceView from "./course-layout-views/course-resource-layout.jsx";
@@ -23,7 +23,7 @@ function Banner({course}){
     );
 }
 
-function CustomTab({course, assignments, onEditAssignment, onDeleteAssignment, onAddAssignmentForCourse}) {
+function CustomTab({course, courseWork, onEditCourseWork, onDeleteCourseWork, onAddCourseWorkForCourse}) {
   const [value, setValue] = useState("1");
 
   const handleChange = (event, newValue) => {
@@ -45,19 +45,19 @@ function CustomTab({course, assignments, onEditAssignment, onDeleteAssignment, o
         <TabContext value={value}>
             <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
                 <TabList onChange={handleChange} aria-label="lab API tabs example">
-                    <Tab label="Upcoming Assignment" value="1" className="w-1/4 focus:outline-none focus:ring-0"/>
+                    <Tab label="Coursework" value="1" className="w-1/4 focus:outline-none focus:ring-0"/>
                     <Tab label="Grade" value="2" className="w-1/4 focus:outline-none focus:ring-0"/>
                     <Tab label="Practice Quiz" value="3" className="w-1/4 focus:outline-none focus:ring-0"/>
                     <Tab label="Course Resource" value="4" className="w-1/4 focus:outline-none focus:ring-0"/>
                 </TabList>
             </Box>
             <TabPanel value="1">
-                <AssignmentView
+                <CourseWorkView
                     course={course}
-                    assignments={assignments}
-                    onEditAssignment={onEditAssignment}
-                    onDeleteAssignment={onDeleteAssignment}
-                    onAddAssignmentForCourse={onAddAssignmentForCourse}
+                    courseWork={courseWork}
+                    onEditCourseWork={onEditCourseWork}
+                    onDeleteCourseWork={onDeleteCourseWork}
+                    onAddCourseWorkForCourse={onAddCourseWorkForCourse}
                 />
             </TabPanel>
             <TabPanel value="2">
@@ -74,7 +74,7 @@ function CustomTab({course, assignments, onEditAssignment, onDeleteAssignment, o
   );
 }
 
-export default function CourseLayout({course, assignments, onEditAssignment, onDeleteAssignment, onAddAssignmentForCourse}) {
+export default function CourseLayout({course, courseWork, onEditCourseWork, onDeleteCourseWork, onAddCourseWorkForCourse}) {
     if(!course) return <p>No course selected.</p>;
 
     return (
@@ -82,10 +82,10 @@ export default function CourseLayout({course, assignments, onEditAssignment, onD
             <Banner course={course} />
             <CustomTab
                 course={course}
-                assignments={assignments}
-                onEditAssignment={onEditAssignment}
-                onDeleteAssignment={onDeleteAssignment}
-                onAddAssignmentForCourse={onAddAssignmentForCourse}
+                courseWork={courseWork}
+                onEditCourseWork={onEditCourseWork}
+                onDeleteCourseWork={onDeleteCourseWork}
+                onAddCourseWorkForCourse={onAddCourseWorkForCourse}
             />
         </div>
     )

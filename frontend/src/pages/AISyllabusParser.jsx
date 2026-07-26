@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
 import { Sparkles } from "lucide-react";
 
-export default function AISyllabusParser({ courses, setAssignments }) {
+export default function AISyllabusParser({ courses, onImportCourseWork }) {
   const [syllabusText, setSyllabusText] = useState("");
-  const [parsedAssignments, setParsedAssignments] = useState([]);
+  const [parsedCourseWork, setParsedCourseWork] = useState([]);
   const [syllabusError, setSyllabusError] = useState("");
   const [aiLoading, setAiLoading] = useState(false);
   const [selectedCourseId, setSelectedCourseId] = useState(courses[0]?._id ?? "");
@@ -69,11 +69,11 @@ export default function AISyllabusParser({ courses, setAssignments }) {
         throw new Error(errorBody || "Failed to reach OpenAI API.");
       }
       const data = await response.json();
-      const assignmentsFromAI = parseResponse(data);
-      if (assignmentsFromAI.length === 0) {
+      const courseWorkFromAI = parseResponse(data);
+      if (courseWorkFromAI.length === 0) {
         throw new Error("OpenAI did not return any assignments. Try simplifying the prompt.");
       }
-      setParsedAssignments(assignmentsFromAI);
+      setParsedCourseWork(courseWorkFromAI);
     } catch (error) {
       setSyllabusError(error.message || "Unable to parse syllabus right now.");
     } finally {
@@ -81,21 +81,20 @@ export default function AISyllabusParser({ courses, setAssignments }) {
     }
   };
 
-  const handleImportAssignments = () => {
-    if (parsedAssignments.length === 0) {
-      setSyllabusError("No parsed assignments to import yet.");
+  const handleImportCourseWork = async () => {
+    if (parsedCourseWork.length === 0) {
+      setSyllabusError("No parsed coursework to import yet.");
       return;
     }
     if (!selectedCourseId) {
-      setSyllabusError("Add a course first so we can attach the assignments.");
+      setSyllabusError("Add a course first so we can attach the coursework.");
       return;
     }
-    const importPayload = parsedAssignments.map((item, idx) => {
+    const importPayload = parsedCourseWork.map((item, idx) => {
       const dueDate = new Date(item.dueDate || item.due || Date.now());
       return {
-        id: `${Date.now()}-${idx}`,
         courseId: selectedCourseId,
-        title: item.title || `AI Assignment ${idx + 1}`,
+        title: item.title || `AI Coursework ${idx + 1}`,
         description: item.description || item.details || "",
         dueDate: isNaN(dueDate.valueOf()) ? new Date().toISOString().split("T")[0] : dueDate.toISOString().split("T")[0],
         priority: normalizePriority(item.priority),
@@ -104,8 +103,8 @@ export default function AISyllabusParser({ courses, setAssignments }) {
         weight: Number(item.weight) || 5,
       };
     });
-    setAssignments((prev) => [...importPayload, ...prev]);
-    setParsedAssignments([]);
+    await onImportCourseWork(importPayload);
+    setParsedCourseWork([]);
     setSyllabusText("");
     setSyllabusError("");
   };
@@ -139,14 +138,14 @@ export default function AISyllabusParser({ courses, setAssignments }) {
             <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white font-bold flex-shrink-0">2</div>
             <div>
               <h4 className="font-semibold text-gray-900 mb-1">OpenAI parses</h4>
-              <p className="text-sm text-gray-600">We call OpenAI to pull out assignments.</p>
+              <p className="text-sm text-gray-600">We call OpenAI to pull out coursework items.</p>
             </div>
           </div>
           <div className="flex items-start space-x-3">
             <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white font-bold flex-shrink-0">3</div>
             <div>
               <h4 className="font-semibold text-gray-900 mb-1">Review & import</h4>
-              <p className="text-sm text-gray-600">Send them straight to your assignments page.</p>
+              <p className="text-sm text-gray-600">Send them straight to your coursework page.</p>
             </div>
           </div>
         </div>
@@ -201,21 +200,21 @@ export default function AISyllabusParser({ courses, setAssignments }) {
           </div>
         </div>
 
-        {parsedAssignments.length > 0 && (
+        {parsedCourseWork.length > 0 && (
           <div className="border border-dashed border-gray-300 rounded-xl p-4">
             <div className="flex items-center justify-between mb-4">
-              <h4 className="font-semibold text-gray-900">Parsed assignments ({parsedAssignments.length})</h4>
+              <h4 className="font-semibold text-gray-900">Parsed coursework ({parsedCourseWork.length})</h4>
               <button
-                onClick={handleImportAssignments}
+                onClick={handleImportCourseWork}
                 className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-semibold"
               >
-                Import to Assignments
+                Import to Coursework
               </button>
             </div>
             <div className="space-y-3">
-              {parsedAssignments.map((item, idx) => (
+              {parsedCourseWork.map((item, idx) => (
                 <div key={idx} className="border border-gray-200 rounded-lg p-3 text-sm">
-                  <p className="font-semibold text-gray-900">{item.title || `Unnamed assignment ${idx + 1}`}</p>
+                  <p className="font-semibold text-gray-900">{item.title || `Unnamed coursework item ${idx + 1}`}</p>
                   {item.description && <p className="text-gray-600 mt-1">{item.description}</p>}
                   <div className="flex flex-wrap gap-2 mt-2 text-xs">
                     {item.dueDate && <span className="px-2 py-1 rounded bg-blue-50 text-blue-600">Due {item.dueDate}</span>}

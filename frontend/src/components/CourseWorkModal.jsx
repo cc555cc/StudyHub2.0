@@ -1,13 +1,13 @@
 import { X } from "lucide-react";
 
-export default function AssignmentModal({ courses, assignmentForm, editingAssignmentId, onInputChange, onSubmit, onClose }) {
+export default function CourseWorkModal({ courses, courseWorkForm, editingCourseWorkId, onInputChange, onSubmit, onClose }) {
   return (
     <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center px-4">
       <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto p-6">
         <div className="flex items-center justify-between mb-4">
           <div>
             <h3 className="text-xl font-semibold text-gray-900">
-              {editingAssignmentId ? "Edit Assignment" : "New Assignment"}
+              {editingCourseWorkId ? "Edit Coursework" : "New Coursework"}
             </h3>
             <p className="text-sm text-gray-500">Track a task, exam, or project with a due date.</p>
           </div>
@@ -16,7 +16,7 @@ export default function AssignmentModal({ courses, assignmentForm, editingAssign
           </button>
         </div>
         {courses.length === 0 ? (
-          <p className="text-sm text-gray-600">Add a course first before creating assignments.</p>
+          <p className="text-sm text-gray-600">Add a course first before creating coursework.</p>
         ) : (
           <form className="space-y-4" onSubmit={onSubmit}>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -24,7 +24,7 @@ export default function AssignmentModal({ courses, assignmentForm, editingAssign
                 <label className="block text-sm font-medium text-gray-700 mb-1">Course</label>
                 <select
                   name="courseId"
-                  value={assignmentForm.courseId}
+                  value={courseWorkForm.courseId}
                   onChange={onInputChange}
                   className="w-full border border-gray-300 rounded-lg px-4 py-2"
                 >
@@ -40,7 +40,7 @@ export default function AssignmentModal({ courses, assignmentForm, editingAssign
                 <input
                   type="date"
                   name="dueDate"
-                  value={assignmentForm.dueDate}
+                  value={courseWorkForm.dueDate}
                   onChange={onInputChange}
                   className="w-full border border-gray-300 rounded-lg px-4 py-2"
                 />
@@ -50,7 +50,7 @@ export default function AssignmentModal({ courses, assignmentForm, editingAssign
               <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
               <input
                 name="title"
-                value={assignmentForm.title}
+                value={courseWorkForm.title}
                 onChange={onInputChange}
                 className="w-full border border-gray-300 rounded-lg px-4 py-2"
                 placeholder="Midterm project"
@@ -60,7 +60,7 @@ export default function AssignmentModal({ courses, assignmentForm, editingAssign
               <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
               <textarea
                 name="description"
-                value={assignmentForm.description}
+                value={courseWorkForm.description}
                 onChange={onInputChange}
                 className="w-full border border-gray-300 rounded-lg px-4 py-2"
                 rows="3"
@@ -72,7 +72,7 @@ export default function AssignmentModal({ courses, assignmentForm, editingAssign
                 <label className="block text-sm font-medium text-gray-700 mb-1">Priority</label>
                 <select
                   name="priority"
-                  value={assignmentForm.priority}
+                  value={courseWorkForm.priority}
                   onChange={onInputChange}
                   className="w-full border border-gray-300 rounded-lg px-4 py-2"
                 >
@@ -85,7 +85,7 @@ export default function AssignmentModal({ courses, assignmentForm, editingAssign
                 <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
                 <select
                   name="status"
-                  value={assignmentForm.status}
+                  value={courseWorkForm.status}
                   onChange={onInputChange}
                   className="w-full border border-gray-300 rounded-lg px-4 py-2"
                 >
@@ -101,7 +101,7 @@ export default function AssignmentModal({ courses, assignmentForm, editingAssign
                 <label className="block text-sm font-medium text-gray-700 mb-1">Type</label>
                 <select
                   name="type"
-                  value={assignmentForm.type}
+                  value={courseWorkForm.type}
                   onChange={onInputChange}
                   className="w-full border border-gray-300 rounded-lg px-4 py-2"
                 >
@@ -118,18 +118,33 @@ export default function AssignmentModal({ courses, assignmentForm, editingAssign
                   name="weight"
                   min="0"
                   max="100"
-                  value={assignmentForm.weight}
+                  value={courseWorkForm.weight}
                   onChange={onInputChange}
                   className="w-full border border-gray-300 rounded-lg px-4 py-2"
                 />
               </div>
             </div>
+            {editingCourseWorkId && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Grade (%, optional if not graded yet)</label>
+                <input
+                  type="number"
+                  name="grade"
+                  min="0"
+                  max="100"
+                  value={courseWorkForm.grade}
+                  onChange={onInputChange}
+                  className="w-full border border-gray-300 rounded-lg px-4 py-2"
+                  placeholder="Ungraded"
+                />
+              </div>
+            )}
             <div className="flex items-center justify-end gap-3">
               <button type="button" onClick={onClose} className="px-4 py-2 rounded-lg border border-gray-300">
                 Cancel
               </button>
               <button type="submit" className="px-6 py-2 rounded-lg bg-blue-500 hover:bg-blue-600 text-white font-semibold">
-                {editingAssignmentId ? "Save Changes" : "Add Assignment"}
+                {editingCourseWorkId ? "Save Changes" : "Add Coursework"}
               </button>
             </div>
           </form>

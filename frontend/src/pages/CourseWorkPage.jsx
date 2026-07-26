@@ -1,22 +1,22 @@
 import { useState } from "react";
 import { Plus, Clock, CheckSquare, TrendingUp, Filter, BookOpen, Edit, Trash2 } from "lucide-react";
 
-export default function AssignmentsPage({
-  assignments,
+export default function CourseWorkPage({
+  courseWork,
   courses,
-  upcomingAssignments,
-  overdueAssignments,
-  completedAssignments,
+  upcomingCourseWork,
+  overdueCourseWork,
+  completedCourseWork,
   completionRate,
-  handleAddAssignment,
-  onEditAssignment,
-  onDeleteAssignment,
+  handleAddCourseWork,
+  onEditCourseWork,
+  onDeleteCourseWork,
 }) {
   const [statusFilter, setStatusFilter] = useState("all");
   const [priorityFilter, setPriorityFilter] = useState("all");
   const [courseFilter, setCourseFilter] = useState("all");
 
-  const filteredAssignments = assignments.filter((a) => {
+  const filteredCourseWork = courseWork.filter((a) => {
     if (statusFilter !== "all" && a.status !== statusFilter) return false;
     if (priorityFilter !== "all" && a.priority !== priorityFilter) return false;
     if (courseFilter !== "all" && a.courseId !== courseFilter) return false;
@@ -27,15 +27,15 @@ export default function AssignmentsPage({
     <div className="max-w-7xl mx-auto">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-8">
         <div>
-          <h2 className="text-3xl font-bold text-gray-900 mb-1">Assignments & Deadlines</h2>
+          <h2 className="text-3xl font-bold text-gray-900 mb-1">Coursework & Deadlines</h2>
           <p className="text-gray-600">Track your tasks and stay on top of deadlines</p>
         </div>
         <button
-          onClick={handleAddAssignment}
+          onClick={handleAddCourseWork}
           className="w-full sm:w-auto bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold flex items-center justify-center"
         >
           <Plus className="w-5 h-5 mr-2" />
-          New Assignment
+          New Coursework
         </button>
       </div>
 
@@ -43,17 +43,17 @@ export default function AssignmentsPage({
         <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl p-6 text-white">
           <Clock className="w-8 h-8 mb-3 opacity-80" />
           <div className="text-sm font-medium opacity-90 mb-1">Upcoming</div>
-          <div className="text-3xl font-bold">{upcomingAssignments}</div>
+          <div className="text-3xl font-bold">{upcomingCourseWork}</div>
         </div>
         <div className="bg-gradient-to-br from-red-500 to-red-600 rounded-xl p-6 text-white">
           <Clock className="w-8 h-8 mb-3 opacity-80" />
           <div className="text-sm font-medium opacity-90 mb-1">Overdue</div>
-          <div className="text-3xl font-bold">{overdueAssignments}</div>
+          <div className="text-3xl font-bold">{overdueCourseWork}</div>
         </div>
         <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-xl p-6 text-white">
           <CheckSquare className="w-8 h-8 mb-3 opacity-80" />
           <div className="text-sm font-medium opacity-90 mb-1">Completed</div>
-          <div className="text-3xl font-bold">{completedAssignments}</div>
+          <div className="text-3xl font-bold">{completedCourseWork}</div>
         </div>
         <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl p-6 text-white">
           <TrendingUp className="w-8 h-8 mb-3 opacity-80" />
@@ -117,13 +117,13 @@ export default function AssignmentsPage({
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
         <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
           <BookOpen className="w-5 h-5 mr-2 text-blue-500" />
-          Assignments ({filteredAssignments.length})
+          Coursework ({filteredCourseWork.length})
         </h3>
-        {filteredAssignments.length === 0 ? (
-          <p className="text-gray-500">No assignments match the selected filters.</p>
+        {filteredCourseWork.length === 0 ? (
+          <p className="text-gray-500">No coursework matches the selected filters.</p>
         ) : (
           <div className="space-y-4">
-            {filteredAssignments.map((a) => {
+            {filteredCourseWork.map((a) => {
               const course = courses.find((c) => c._id === a.courseId);
               const isOverdue = a.status === "overdue";
               const statusBadge = {
@@ -161,13 +161,16 @@ export default function AssignmentsPage({
                       {statusBadge && <span className={`px-2 py-1 rounded ${statusBadge.className}`}>{statusBadge.label}</span>}
                       <span className="px-2 py-1 rounded bg-blue-50 text-blue-600">Due {a.dueDate}</span>
                       <span className="px-2 py-1 rounded bg-gray-50 text-gray-600">{a.weight}% of grade</span>
+                      <span className="px-2 py-1 rounded bg-gray-50 text-gray-600">
+                        {a.grade === "" || a.grade === null || a.grade === undefined ? "Ungraded" : `${a.grade}%`}
+                      </span>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <button onClick={() => onEditAssignment(a)} className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+                    <button onClick={() => onEditCourseWork(a)} className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
                       <Edit className="w-4 h-4 text-blue-500" />
                     </button>
-                    <button onClick={() => onDeleteAssignment(a.id)} className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+                    <button onClick={() => onDeleteCourseWork(a.id)} className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
                       <Trash2 className="w-4 h-4 text-red-500" />
                     </button>
                   </div>

@@ -17,7 +17,7 @@ export default function LandingPage({ setAuthScreen }) {
           </h1>
 
           <p className="text-lg text-slate-200 mb-8">
-            StudyHub centralizes your courses, schedule, assignments, and notes so you always know what&apos;s next.
+            StudyHub centralizes your courses, schedule, coursework, and notes so you always know what&apos;s next.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4">

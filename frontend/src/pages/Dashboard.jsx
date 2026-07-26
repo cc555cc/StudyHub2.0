@@ -11,14 +11,14 @@ import {
 
 export default function Dashboard({
   courses,
-  assignments,
+  courseWork,
   classes,
-  upcomingAssignments,
-  overdueAssignments,
+  upcomingCourseWork,
+  overdueCourseWork,
   totalStudyTime,
   setCurrentPage,
   handleAddCourse,
-  handleAddAssignment,
+  handleAddCourseWork,
   handleAddClass,
 }) {
   const stats = [
@@ -31,7 +31,7 @@ export default function Dashboard({
     },
     {
       label: "Due Soon",
-      value: upcomingAssignments,
+      value: upcomingCourseWork,
       subtitle: "Pending tasks",
       color: "from-purple-500 to-purple-600",
       icon: CheckSquare,
@@ -87,14 +87,14 @@ export default function Dashboard({
               <h3 className="text-lg font-semibold text-gray-900">Upcoming Deadlines</h3>
             </div>
             <button
-              onClick={() => setCurrentPage("assignments")}
+              onClick={() => setCurrentPage("coursework")}
               className="text-sm text-blue-500 hover:text-blue-600 font-medium flex items-center"
             >
               View All <span className="ml-1">→</span>
             </button>
           </div>
 
-          {overdueAssignments === 0 ? (
+          {overdueCourseWork === 0 ? (
             <div className="flex flex-col items-center justify-center py-12">
               <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mb-4">
                 <Calendar className="w-10 h-10 text-gray-400" />
@@ -104,7 +104,7 @@ export default function Dashboard({
             </div>
           ) : (
             <div className="space-y-3">
-              {assignments
+              {courseWork
                 .filter((a) => a.status === "overdue")
                 .slice(0, 3)
                 .map((a) => {
@@ -193,11 +193,11 @@ export default function Dashboard({
               <p className="text-xs opacity-80">Create a new course</p>
             </button>
             <button
-              onClick={handleAddAssignment}
+              onClick={handleAddCourseWork}
               className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg p-4 text-white hover:shadow-lg transition text-left"
             >
               <CheckSquare className="w-6 h-6 mb-2" />
-              <p className="font-semibold text-sm mb-1">New Assignment</p>
+              <p className="font-semibold text-sm mb-1">New Coursework</p>
               <p className="text-xs opacity-80">Track a deadline</p>
             </button>
             <button

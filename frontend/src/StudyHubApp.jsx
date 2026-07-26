@@ -17,11 +17,11 @@ import api from "./api/client.js";
 import Sidebar from "./components/Sidebar.jsx";
 import UserBanner from "./components/UserBanner.jsx";
 import ScheduleModal from "./components/ScheduleModal.jsx";
-import AssignmentModal from "./components/AssignmentModal.jsx";
+import CourseWorkModal from "./components/CourseWorkModal.jsx";
 import Dashboard from "./pages/Dashboard.jsx";
 import CoursesPage from "./pages/CoursesPage.jsx";
 import CalendarPage from "./pages/CalendarPage.jsx";
-import AssignmentsPage from "./pages/AssignmentsPage.jsx";
+import CourseWorkPage from "./pages/CourseWorkPage.jsx";
 import NotesPage from "./pages/NotesPage.jsx";
 import StudyTimerPage from "./pages/StudyTimerPage.jsx";
 import AISyllabusParser from "./pages/AISyllabusParser.jsx";
@@ -206,8 +206,22 @@ const StudyHubApp = () => {
 
   // ----- DATA -----
   const [courses, setCourses] = useState([]);
-  const [assignments, setAssignments] = useState([]);
+  const [courseWork, setCourseWork] = useState([]);
   const [classes, setClasses] = useState([]);
+
+  // Translates a backend CourseWork record into the shape the coursework UI uses.
+  const mapCourseWork = (cw) => ({
+    id: cw._id,
+    courseId: cw.course_id,
+    title: cw.cw_name,
+    description: cw.description ?? "",
+    dueDate: cw.due_date ? cw.due_date.slice(0, 10) : "",
+    priority: cw.priority ?? "medium",
+    status: cw.status ?? "not_started",
+    type: cw.cw_type ?? "assignment",
+    weight: cw.cw_weight ?? 0,
+    grade: cw.cw_grade ?? "",
+  });
 
   const today = new Date();
   const [calendarMonth, setCalendarMonth] = useState(today.getMonth());
@@ -230,9 +244,9 @@ const StudyHubApp = () => {
   const [holidays, setHolidays] = useState([]);
   const [holidayError, setHolidayError] = useState("");
   const [holidaysLoading, setHolidaysLoading] = useState(false);
-  const [isAssignmentModalOpen, setIsAssignmentModalOpen] = useState(false);
-  const [editingAssignmentId, setEditingAssignmentId] = useState(null);
-  const buildAssignmentForm = () => ({
+  const [isCourseWorkModalOpen, setIsCourseWorkModalOpen] = useState(false);
+  const [editingCourseWorkId, setEditingCourseWorkId] = useState(null);
+  const buildCourseWorkForm = () => ({
     courseId: courses[0]?._id ?? "",
     title: "",
     description: "",
@@ -241,8 +255,9 @@ const StudyHubApp = () => {
     status: "not_started",
     type: "assignment",
     weight: 5,
+    grade: "",
   });
-  const [assignmentForm, setAssignmentForm] = useState(buildAssignmentForm);
+  const [courseWorkForm, setCourseWorkForm] = useState(buildCourseWorkForm);
 
   const [notebooks, setNotebooks] = useState([
     {
@@ -308,7 +323,7 @@ const StudyHubApp = () => {
   useEffect(() => {
     if (courses.length === 0) {
       setClassForm((prev) => ({ ...prev, courseId: "" }));
-      setAssignmentForm((prev) => ({ ...prev, courseId: "" }));
+      setCourseWorkForm((prev) => ({ ...prev, courseId: "" }));
       return;
     }
     setClassForm((prev) => {
@@ -317,7 +332,7 @@ const StudyHubApp = () => {
       }
       return { ...prev, courseId: courses[0]._id };
     });
-    setAssignmentForm((prev) => {
+    setCourseWorkForm((prev) => {
       if (prev.courseId && courses.some((course) => course._id === prev.courseId)) {
         return prev;
       }
@@ -353,15 +368,22 @@ const StudyHubApp = () => {
     return () => controller.abort();
   }, [calendarYear]);
 
+  useEffect(() => {
+    if (!user?._id) return;
+    api.get(`/coursework/user/${user._id}`)
+      .then(({ data }) => setCourseWork(data.map(mapCourseWork)))
+      .catch((error) => console.error("Fetch coursework error:", error.response?.data || error.message));
+  }, [user]);
+
   // ----- DERIVED STATS -----
-  const upcomingAssignments = assignments.filter(
+  const upcomingCourseWork = courseWork.filter(
     (a) => a.status === "not_started" || a.status === "in_progress"
   ).length;
-  const overdueAssignments = assignments.filter((a) => a.status === "overdue").length;
-  const completedAssignments = assignments.filter((a) => a.status === "completed").length;
+  const overdueCourseWork = courseWork.filter((a) => a.status === "overdue").length;
+  const completedCourseWork = courseWork.filter((a) => a.status === "completed").length;
   const totalStudyTime = studySessions.reduce((acc, s) => acc + s.duration, 0);
   const completionRate =
-    assignments.length > 0 ? Math.round((completedAssignments / assignments.length) * 100) : 0;
+    courseWork.length > 0 ? Math.round((completedCourseWork / courseWork.length) * 100) : 0;
 
   // ----- COURSE ACTIONS -----
   const handleEditCourse = (course) => {
@@ -389,7 +411,7 @@ const StudyHubApp = () => {
     }
     setCourses((prev) => prev.filter((course) => course._id !== courseId));
     setClasses((prev) => prev.filter((session) => session.courseId !== courseId));
-    setAssignments((prev) => prev.filter((a) => a.courseId !== courseId));
+    setCourseWork((prev) => prev.filter((a) => a.courseId !== courseId));
     if (editingCourseId === courseId) {
       setEditingCourseId(null);
     }
@@ -477,87 +499,131 @@ const StudyHubApp = () => {
     setCurrentPage("calendar");
   };
 
-  // ----- ASSIGNMENT ACTIONS -----
-  const openAssignmentModal = () => {
+  // ----- COURSEWORK ACTIONS -----
+  const openCourseWorkModal = () => {
     if (courses.length === 0) {
       alert("Add a course first.");
       return;
     }
-    setEditingAssignmentId(null);
-    setAssignmentForm(buildAssignmentForm());
-    setIsAssignmentModalOpen(true);
+    setEditingCourseWorkId(null);
+    setCourseWorkForm(buildCourseWorkForm());
+    setIsCourseWorkModalOpen(true);
   };
 
-  const openAssignmentModalForCourse = (courseId) => {
+  const openCourseWorkModalForCourse = (courseId) => {
     if (courses.length === 0) {
       alert("Add a course first.");
       return;
     }
-    setEditingAssignmentId(null);
-    setAssignmentForm({ ...buildAssignmentForm(), courseId });
-    setIsAssignmentModalOpen(true);
+    setEditingCourseWorkId(null);
+    setCourseWorkForm({ ...buildCourseWorkForm(), courseId });
+    setIsCourseWorkModalOpen(true);
   };
 
-  const handleAddAssignment = () => openAssignmentModal();
+  const handleAddCourseWork = () => openCourseWorkModal();
 
-  const closeAssignmentModal = () => {
-    setIsAssignmentModalOpen(false);
-    setEditingAssignmentId(null);
+  const closeCourseWorkModal = () => {
+    setIsCourseWorkModalOpen(false);
+    setEditingCourseWorkId(null);
   };
 
-  const handleAssignmentInputChange = (e) => {
+  const handleCourseWorkInputChange = (e) => {
     const { name, value } = e.target;
-    setAssignmentForm((prev) => ({
+    setCourseWorkForm((prev) => ({
       ...prev,
       [name]: name === "weight" ? Number(value) : value,
     }));
   };
 
-  const handleAssignmentSubmit = (e) => {
+  const handleCourseWorkSubmit = async (e) => {
     e.preventDefault();
-    if (!assignmentForm.title.trim()) {
-      alert("Assignment title is required.");
+    if (!courseWorkForm.title.trim()) {
+      alert("Title is required.");
       return;
     }
-    if (!assignmentForm.courseId) {
-      alert("Select a course for the assignment.");
+    if (!courseWorkForm.courseId) {
+      alert("Select a course.");
       return;
     }
-    const base = {
-      ...assignmentForm,
-      title: assignmentForm.title.trim(),
-      description: assignmentForm.description.trim(),
+
+    const payload = {
+      course_id: courseWorkForm.courseId,
+      cw_name: courseWorkForm.title.trim(),
+      cw_grade: courseWorkForm.grade === "" ? null : Number(courseWorkForm.grade),
+      cw_weight: Number(courseWorkForm.weight) || 0,
+      description: courseWorkForm.description.trim(),
+      due_date: courseWorkForm.dueDate || undefined,
+      priority: courseWorkForm.priority,
+      status: courseWorkForm.status,
+      cw_type: courseWorkForm.type,
     };
-    if (editingAssignmentId) { // Editing an existing assignment
-      setAssignments((prev) => prev.map((a) => (a.id === editingAssignmentId ? { ...base, id: editingAssignmentId } : a)));
-    } else { // Adding a new assignment
-      setAssignments((prev) => [{ ...base, id: Date.now().toString() }, ...prev]);
+
+    try {
+      if (editingCourseWorkId) {
+        const { data } = await api.put(`/coursework/${editingCourseWorkId}`, payload);
+        setCourseWork((prev) => prev.map((item) => (item.id === editingCourseWorkId ? mapCourseWork(data) : item)));
+      } else {
+        const { data } = await api.post("/coursework", payload);
+        setCourseWork((prev) => [mapCourseWork(data), ...prev]);
+      }
+      setIsCourseWorkModalOpen(false);
+      setEditingCourseWorkId(null);
+      setCurrentPage("coursework");
+    } catch (error) {
+      console.error("Failed to save coursework:", error.response?.data || error.message);
+      alert("Failed to save. Please try again.");
     }
-    api.post("coursework", base).catch((error) => {
-      console.error("Failed to save assignment:", error.response?.data || error.message);
-      alert("Failed to save assignment. Please try again.");
-    });
-    setIsAssignmentModalOpen(false);
-    setEditingAssignmentId(null);
-    setCurrentPage("assignments");
   };
 
-  const onEditAssignment = (a) => {
-    setAssignmentForm({
-      courseId: a.courseId,
-      title: a.title,
-      description: a.description,
-      dueDate: a.dueDate,
-      priority: a.priority,
-      status: a.status,
-      type: a.type,
-      weight: a.weight,
+  const onEditCourseWork = (item) => {
+    setCourseWorkForm({
+      courseId: item.courseId,
+      title: item.title,
+      description: item.description,
+      dueDate: item.dueDate,
+      priority: item.priority,
+      status: item.status,
+      type: item.type,
+      weight: item.weight,
+      grade: item.grade ?? "",
     });
-    setEditingAssignmentId(a.id);
-    setIsAssignmentModalOpen(true);
+    setEditingCourseWorkId(item.id);
+    setIsCourseWorkModalOpen(true);
   };
 
-  const onDeleteAssignment = (id) => setAssignments((list) => list.filter((x) => x.id !== id));
+  const onDeleteCourseWork = async (id) => {
+    try {
+      await api.delete(`/coursework/${id}`);
+      setCourseWork((list) => list.filter((x) => x.id !== id));
+    } catch (error) {
+      console.error("Failed to delete coursework:", error.response?.data || error.message);
+      alert("Failed to delete. Please try again.");
+    }
+  };
+
+  // Imports AI-parsed syllabus items as real, persisted coursework rows.
+  const importParsedCourseWork = async (items) => {
+    const created = [];
+    for (const item of items) {
+      try {
+        const { data } = await api.post("/coursework", {
+          course_id: item.courseId,
+          cw_name: item.title,
+          cw_grade: null,
+          cw_weight: Number(item.weight) || 0,
+          description: item.description,
+          due_date: item.dueDate || undefined,
+          priority: item.priority,
+          status: item.status,
+          cw_type: item.type,
+        });
+        created.push(mapCourseWork(data));
+      } catch (error) {
+        console.error("Failed to import coursework item:", error.response?.data || error.message);
+      }
+    }
+    setCourseWork((prev) => [...created, ...prev]);
+  };
 
   const exportICS = () => {
     const pad = (n) => String(n).padStart(2, "0");
@@ -617,7 +683,7 @@ END:VCALENDAR`.replace(/\n/g, "\r\n");
     { id: "dashboard", label: "Dashboard", icon: TrendingUp },
     { id: "courses", label: "Courses", icon: BookOpen },
     { id: "calendar", label: "Calendar", icon: Calendar },
-    { id: "assignments", label: "Assignments", icon: CheckSquare },
+    { id: "coursework", label: "Coursework", icon: CheckSquare },
     { id: "notes", label: "Notes", icon: FileText },
     { id: "timer", label: "Study Timer", icon: Clock },
     { id: "syllabus", label: "AI Syllabus Parser", icon: Settings },
@@ -629,14 +695,14 @@ END:VCALENDAR`.replace(/\n/g, "\r\n");
         return (
           <Dashboard
             courses={courses}
-            assignments={assignments}
+            courseWork={courseWork}
             classes={classes}
-            upcomingAssignments={upcomingAssignments}
-            overdueAssignments={overdueAssignments}
+            upcomingCourseWork={upcomingCourseWork}
+            overdueCourseWork={overdueCourseWork}
             totalStudyTime={totalStudyTime}
             setCurrentPage={setCurrentPage}
             handleAddCourse={handleAddCourse}
-            handleAddAssignment={handleAddAssignment}
+            handleAddCourseWork={handleAddCourseWork}
             handleAddClass={handleAddClass}
           />
         );
@@ -672,18 +738,18 @@ END:VCALENDAR`.replace(/\n/g, "\r\n");
             openScheduleModal={openScheduleModal}
           />
         );
-      case "assignments":
+      case "coursework":
         return (
-          <AssignmentsPage
-            assignments={assignments}
+          <CourseWorkPage
+            courseWork={courseWork}
             courses={courses}
-            upcomingAssignments={upcomingAssignments}
-            overdueAssignments={overdueAssignments}
-            completedAssignments={completedAssignments}
+            upcomingCourseWork={upcomingCourseWork}
+            overdueCourseWork={overdueCourseWork}
+            completedCourseWork={completedCourseWork}
             completionRate={completionRate}
-            handleAddAssignment={handleAddAssignment}
-            onEditAssignment={onEditAssignment}
-            onDeleteAssignment={onDeleteAssignment}
+            handleAddCourseWork={handleAddCourseWork}
+            onEditCourseWork={onEditCourseWork}
+            onDeleteCourseWork={onDeleteCourseWork}
           />
         );
       case "notes":
@@ -699,29 +765,29 @@ END:VCALENDAR`.replace(/\n/g, "\r\n");
           />
         );
       case "syllabus":
-        return <AISyllabusParser courses={courses} setAssignments={setAssignments} />;
+        return <AISyllabusParser courses={courses} onImportCourseWork={importParsedCourseWork} />;
       case "courseLayout":
         return (
           <CourseLayout
             course={selectedCourse}
-            assignments={assignments}
-            onEditAssignment={onEditAssignment}
-            onDeleteAssignment={onDeleteAssignment}
-            onAddAssignmentForCourse={openAssignmentModalForCourse}
+            courseWork={courseWork}
+            onEditCourseWork={onEditCourseWork}
+            onDeleteCourseWork={onDeleteCourseWork}
+            onAddCourseWorkForCourse={openCourseWorkModalForCourse}
           />
         );
       default:
         return (
           <Dashboard
             courses={courses}
-            assignments={assignments}
+            courseWork={courseWork}
             classes={classes}
-            upcomingAssignments={upcomingAssignments}
-            overdueAssignments={overdueAssignments}
+            upcomingCourseWork={upcomingCourseWork}
+            overdueCourseWork={overdueCourseWork}
             totalStudyTime={totalStudyTime}
             setCurrentPage={setCurrentPage}
             handleAddCourse={handleAddCourse}
-            handleAddAssignment={handleAddAssignment}
+            handleAddCourseWork={handleAddCourseWork}
             handleAddClass={handleAddClass}
           />
         );
@@ -790,14 +856,14 @@ END:VCALENDAR`.replace(/\n/g, "\r\n");
           onStartEditClass={startEditClass}
         />
       )}
-      {isAssignmentModalOpen && (
-        <AssignmentModal
+      {isCourseWorkModalOpen && (
+        <CourseWorkModal
           courses={courses}
-          assignmentForm={assignmentForm}
-          editingAssignmentId={editingAssignmentId}
-          onInputChange={handleAssignmentInputChange}
-          onSubmit={handleAssignmentSubmit}
-          onClose={closeAssignmentModal}
+          courseWorkForm={courseWorkForm}
+          editingCourseWorkId={editingCourseWorkId}
+          onInputChange={handleCourseWorkInputChange}
+          onSubmit={handleCourseWorkSubmit}
+          onClose={closeCourseWorkModal}
         />
       )}
     </div>
