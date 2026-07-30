@@ -259,23 +259,8 @@ const StudyHubApp = () => {
   });
   const [courseWorkForm, setCourseWorkForm] = useState(buildCourseWorkForm);
 
-  const [notebooks, setNotebooks] = useState([
-    {
-      id: "1",
-      name: "My Notebook",
-      color: "blue",
-      courseId: null,
-      pages: [
-        {
-          id: "1",
-          title: "Page 1",
-          content: "",
-          createdDate: new Date().toISOString(),
-        },
-      ],
-    },
-  ]);
-
+  const [notebooks, setNotebooks] = useState([]);
+  
   const [studySessions, setStudySessions] = useState([]);
 
   const [timerState, setTimerState] = useState({
@@ -283,8 +268,27 @@ const StudyHubApp = () => {
     seconds: 0,
     selectedCourse: null,
   });
+  //fetch user's note upon log in//
+  useEffect(() => {
+    if(!user?._id){
+      setNotebooks([]);
+      return;
+    }
 
-  // Fetch this user's courses once logged in.
+    //GET Notebooks
+    (async () => {
+      try{
+        const notebooksResponse = await api.get(`/api/studynote/user/${user._id}`);
+        if(!cancelled){
+          setNotebooks(notebooksResponse.data);
+        }
+      }catch (error){
+        console.error("Fetch courses error:", error.response?.data || error.message);
+      }
+    })
+  },[user?._id]);
+
+  //Fetch this user's courses once logged in.
   useEffect(() => {
     if (!user?._id) {
       setCourses([]);
