@@ -6,10 +6,12 @@ export default function NotesPage({ notebooks, setNotebooks }) {
   const [selectedPage, setSelectedPage] = useState(notebooks[0]?.pages[0] ?? null);
   const [text, setText] = useState(selectedPage?.content ?? "");
 
+  //display the current page number//
   useEffect(() => {
     setText(selectedPage?.content ?? "");
   }, [selectedPage]);
 
+  //passed the update note page back to studyhubapp.jsx, then upload it to backend//
   const saveNote = () => {
     if (!selectedNotebook || !selectedPage) return;
     setNotebooks((all) =>
@@ -38,7 +40,7 @@ export default function NotesPage({ notebooks, setNotebooks }) {
                   name: `Notebook ${n.length + 1}`,
                   color: "blue",
                   courseId: null,
-                  pages: [
+                  pages: [ 
                     {
                       id: Date.now().toString() + "-p",
                       title: "Page 1",

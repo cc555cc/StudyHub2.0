@@ -268,24 +268,53 @@ const StudyHubApp = () => {
     seconds: 0,
     selectedCourse: null,
   });
-  //fetch user's note upon log in//
+  //fetch user's notebooks (and each notebook's pages) upon log in//
   useEffect(() => {
     if(!user?._id){
       setNotebooks([]);
       return;
     }
 
-    //GET Notebooks
+    let cancelled = false;
+
     (async () => {
       try{
-        const notebooksResponse = await api.get(`/api/studynote/user/${user._id}`);
+        const { data: notes } = await api.get(`/studynote/user/${user._id}`);
+
+        const mapped = await Promise.all(
+          notes.map(async (note) => {
+            let pages = [];
+            try{
+              const { data: pageData } = await api.get(`/notepage/note/${note._id}`);
+              pages = pageData.map((p) => ({
+                id: p._id,
+                title: p.page,
+                content: p.content,
+                createdDate: p.date,
+              }));
+            }catch (error){
+              console.error("Fetch " + note.title + " pages error", error.response?.data || error.message);
+            }
+            return {
+              id: note._id,
+              name: note.title,
+              courseId: note.course_id ?? null,
+              pages,
+            };
+          })
+        );
+
         if(!cancelled){
-          setNotebooks(notebooksResponse.data);
+          setNotebooks(mapped);
         }
       }catch (error){
-        console.error("Fetch courses error:", error.response?.data || error.message);
+        console.error("Fetch notebooks error:", error.response?.data || error.message);
       }
-    })
+    })();
+
+    return () => {
+      cancelled = true;
+    };
   },[user?._id]);
 
   //Fetch this user's courses once logged in.
