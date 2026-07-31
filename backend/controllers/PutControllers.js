@@ -36,10 +36,10 @@ export const updateEvent = (req, res) =>
   updateModel(Models.CalendarEvent, "eventId", req, res);
 
 export const updateStudyNote = (req, res) =>
-  updateModel(Models.StudyNote, "noteId", req, res);
+  updateModel(Models.Study_Note, "noteId", req, res);
 
 export const updateNotePage = (req, res) =>
-  updateModel(Models.NotePage, "pageId", req, res);
+  updateModel(Models.Note_Page, "pageId", req, res);
 
 export const updateQuestion = (req, res) =>
   updateModel(Models.Question, "questionId", req, res);

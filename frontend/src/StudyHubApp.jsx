@@ -658,6 +658,90 @@ const StudyHubApp = () => {
     setCourseWork((prev) => [...created, ...prev]);
   };
 
+  // Maps a backend Note_Page doc to the shape the notes UI uses.
+  const mapNotePage = (np) => ({
+    id: np._id,
+    title: np.page,
+    content: np.content,
+    createdDate: np.date,
+  });
+
+  const createNotebook = async (title, courseId) => {
+    try {
+      const { data } = await api.post("/studynote", {
+        user_id: user._id,
+        title,
+        date: new Date().toISOString(),
+        course_id: courseId || undefined,
+      });
+      const notebook = { id: data._id, name: data.title, courseId: data.course_id ?? null, pages: [] };
+      setNotebooks((prev) => [notebook, ...prev]);
+      return notebook;
+    } catch (error) {
+      console.error("Failed to create notebook:", error.response?.data || error.message);
+      alert("Failed to create notebook. Please try again.");
+      return null;
+    }
+  };
+
+  const createNotePage = async (notebookId, title) => {
+    try {
+      const { data } = await api.post("/notepage", {
+        note_id: notebookId,
+        page: title,
+        content: "",
+        date: new Date().toISOString(),
+      });
+      const page = mapNotePage(data);
+      setNotebooks((prev) => prev.map((nb) => (nb.id === notebookId ? { ...nb, pages: [page, ...nb.pages] } : nb)));
+      return page;
+    } catch (error) {
+      console.error("Failed to create page:", error.response?.data || error.message);
+      alert("Failed to create page. Please try again.");
+      return null;
+    }
+  };
+
+  const saveNotePage = async (notebookId, pageId, title, content) => {
+    try {
+      const { data } = await api.put(`/notepage/${pageId}`, {
+        note_id: notebookId,
+        page: title,
+        content,
+        date: new Date().toISOString(),
+      });
+      const page = mapNotePage(data);
+      setNotebooks((prev) =>
+        prev.map((nb) => (nb.id !== notebookId ? nb : { ...nb, pages: nb.pages.map((p) => (p.id === pageId ? page : p)) }))
+      );
+    } catch (error) {
+      console.error("Failed to save page:", error.response?.data || error.message);
+      alert("Failed to save note. Please try again.");
+    }
+  };
+
+  const deleteNotebook = async (notebookId) => {
+    try {
+      await api.delete(`/studynote/${notebookId}`);
+      setNotebooks((prev) => prev.filter((nb) => nb.id !== notebookId));
+    } catch (error) {
+      console.error("Failed to delete notebook:", error.response?.data || error.message);
+      alert("Failed to delete notebook. Please try again.");
+    }
+  };
+
+  const deleteNotePage = async (notebookId, pageId) => {
+    try {
+      await api.delete(`/notepage/${pageId}`);
+      setNotebooks((prev) =>
+        prev.map((nb) => (nb.id === notebookId ? { ...nb, pages: nb.pages.filter((p) => p.id !== pageId) } : nb))
+      );
+    } catch (error) {
+      console.error("Failed to delete page:", error.response?.data || error.message);
+      alert("Failed to delete page. Please try again.");
+    }
+  };
+
   const exportICS = () => {
     const pad = (n) => String(n).padStart(2, "0");
     const now = new Date();
@@ -786,7 +870,19 @@ END:VCALENDAR`.replace(/\n/g, "\r\n");
           />
         );
       case "notes":
-        return <NotesPage notebooks={notebooks} setNotebooks={setNotebooks} />;
+        return (
+          <NotesPage
+            notebooks={notebooks}
+            setNotebooks={setNotebooks}
+            userId={user?._id}
+            courses={courses}
+            onCreateNotebook={createNotebook}
+            onCreatePage={createNotePage}
+            onSaveNote={saveNotePage}
+            onDeleteNotebook={deleteNotebook}
+            onDeletePage={deleteNotePage}
+          />
+        );
       case "timer":
         return (
           <StudyTimerPage

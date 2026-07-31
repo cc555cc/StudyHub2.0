@@ -1,9 +1,15 @@
 import { useState, useEffect } from "react";
 import { Plus, FileText, Search, BookOpen } from "lucide-react";
+import api from "../api/client.js";
 
-export default function NotesPage({ notebooks, setNotebooks }) {
-  const [selectedNotebook, setSelectedNotebook] = useState(notebooks[0]);
-  const [selectedPage, setSelectedPage] = useState(notebooks[0]?.pages[0] ?? null);
+export default function NotesPage({ notebooks, setNotebooks, userId }) {
+  //tracking notebook ID and current page ID//
+  const [selectedNotebookId, setSelectedNotebookId] = useState(notebooks[0]?.id ?? null);
+  const [selectedPageId, setSelectedPageId] = useState(notebooks[0]?.pages[0]?.id ?? null);
+
+  //retrieve corresponding notebook and pages//
+  const selectedNotebook = notebooks.find((nb) => nb.id === selectedNotebookId) ?? null;
+  const selectedPage = selectedNotebook?.pages.find((p) => p.id === selectedPageId);
   const [text, setText] = useState(selectedPage?.content ?? "");
 
   //display the current page number//
@@ -12,18 +18,103 @@ export default function NotesPage({ notebooks, setNotebooks }) {
   }, [selectedPage]);
 
   //passed the update note page back to studyhubapp.jsx, then upload it to backend//
-  const saveNote = () => {
+  const saveNote = async () => {
     if (!selectedNotebook || !selectedPage) return;
+
+    let notebookId = selectedNotebook.id;
+    const pageIdMap = {};
+
+    //upload new notebook (and its local pages) to backend when clicking save for the first time//
+    if (selectedNotebook.status === "new") {
+      try {
+        const notebookPayload = {
+          user_id: userId,
+          title: selectedNotebook.name,
+          date: new Date().toISOString(),
+          course_id: selectedNotebook.courseId || undefined,
+        };
+
+        //POST for notebook//
+        const { data: notebookData } = await api.post("/studynote", notebookPayload);
+        notebookId = notebookData._id;
+        setSelectedNotebookId(notebookId);
+
+        //POST for each of the notebook's local pages//
+        for (const page of selectedNotebook.pages) {
+          const pagePayload = {
+            note_id: notebookId,
+            page: page.title,
+            content: page.id === selectedPage.id ? text : page.content,
+            date: new Date().toISOString(),
+          };
+          const { data: pageData } = await api.post("/notepage", pagePayload);
+          pageIdMap[page.id] = pageData._id;
+        }
+
+        if (pageIdMap[selectedPage.id]) {
+          setSelectedPageId(pageIdMap[selectedPage.id]);
+        }
+      } catch (error) {
+        console.error("Failed to add new notebook:", error.response?.data || error.message);
+        return;
+      }
+    } else { //for existing notebook//
+      //handle pages that are new to this notebook//
+      for (const page of selectedNotebook.pages) {
+        if (page.status === "new") {
+          const pagePayload = {
+            note_id: notebookId,
+            page: page.title,
+            content: page.id === selectedPage.id ? text : page.content,
+            date: new Date().toISOString(),
+          };
+
+          try {
+            const { data: pageData } = await api.post("/notepage", pagePayload);
+            pageIdMap[page.id] = pageData._id;
+          } catch (error) {
+            console.error("Failed to add new page:", error.response?.data || error.message);
+          }
+        }
+      }
+
+      //persist the currently edited page if it already exists in the backend//
+      if (selectedPage.status !== "new") {
+        try {
+          await api.put(`/notepage/${selectedPage.id}`, {
+            note_id: notebookId,
+            page: selectedPage.title,
+            content: text,
+            date: new Date().toISOString(),
+          });
+        } catch (error) {
+          console.error("Failed to save page:", error.response?.data || error.message);
+        }
+      }
+    }
+
     setNotebooks((all) =>
       all.map((nb) =>
         nb.id !== selectedNotebook.id
           ? nb
           : {
               ...nb,
-              pages: nb.pages.map((p) => (p.id === selectedPage.id ? { ...p, content: text } : p)),
+              id: notebookId,
+              status: "old",
+              pages: nb.pages.map((p) => {
+                const updated = pageIdMap[p.id] ? { ...p, id: pageIdMap[p.id], status: "old" } : p;
+                return p.id === selectedPage.id ? { ...updated, content: text } : updated;
+              }),
             }
       )
     );
+
+    useEffect(() => {
+      if(selectedNotebookId === null && notebooks.length > 0){
+        setSelectedNotebookId(notebooks[0].id);
+        setSelectedPageId(notebooks[0].pages[0]?.id ?? null);
+      }
+    }, [notebooks, selectedNotebookId]);
   };
 
   return (
@@ -48,6 +139,7 @@ export default function NotesPage({ notebooks, setNotebooks }) {
                       createdDate: new Date().toISOString(),
                     },
                   ],
+                  status: "new",
                 },
               ])
             }
@@ -63,8 +155,8 @@ export default function NotesPage({ notebooks, setNotebooks }) {
             <button
               key={nb.id}
               onClick={() => {
-                setSelectedNotebook(nb);
-                setSelectedPage(nb.pages[0]);
+                setSelectedNotebookId(nb.id);
+                setSelectedPageId(nb.pages[0]?.id ?? null);
               }}
               className={`w-full flex items-center justify-between p-3 rounded-lg mb-2 transition-colors ${
                 selectedNotebook?.id === nb.id ? "bg-blue-50 border border-blue-200" : "hover:bg-gray-50"
@@ -95,9 +187,10 @@ export default function NotesPage({ notebooks, setNotebooks }) {
                 title: `Page ${selectedNotebook.pages.length + 1}`,
                 content: "",
                 createdDate: new Date().toISOString(),
+                status: "new",
               };
               setNotebooks((all) => all.map((nb) => (nb.id === selectedNotebook.id ? { ...nb, pages: [newP, ...nb.pages] } : nb)));
-              setSelectedPage(newP);
+              setSelectedPageId(newP.id);
             }}
             className="w-full bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg font-medium flex items-center justify-center"
           >
@@ -121,7 +214,7 @@ export default function NotesPage({ notebooks, setNotebooks }) {
           {selectedNotebook?.pages.map((p) => (
             <button
               key={p.id}
-              onClick={() => setSelectedPage(p)}
+              onClick={() => setSelectedPageId(p.id)}
               className={`w-full text-left p-3 rounded-lg mb-2 transition-colors ${
                 selectedPage?.id === p.id ? "bg-white shadow-sm border border-gray-200" : "hover:bg-white"
               }`}

@@ -30,10 +30,10 @@ export const deleteEvent = (req, res) =>
   deleteModel(Models.CalendarEvent, "eventId", req, res);
 
 export const deleteStudyNote = (req, res) =>
-  deleteModel(Models.StudyNote, "noteId", req, res);
+  deleteModel(Models.Study_Note, "noteId", req, res);
 
 export const deleteNotePage = (req, res) =>
-  deleteModel(Models.NotePage, "pageId", req, res);
+  deleteModel(Models.Note_Page, "pageId", req, res);
 
 export const deleteQuestion = (req, res) =>
   deleteModel(Models.Question, "questionId", req, res);
